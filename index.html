@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Livestorm Access Link Generator</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        /* Livestorm core colors (brand book) */
+        --ls-blue: #0b42c3;
+        --ls-winter-green: #12262b;
+        --ls-white: #ffffff;
+
+        /* UI neutrals (Nimbus Grey scale from brand book) */
+        --nimbus-50: #f6f7f9;
+        --nimbus-100: #eaeef1;
+        --nimbus-200: #c8d3da;
+        --nimbus-600: #5d6d79;
+        --nimbus-700: #4d5b66;
+        --nimbus-900: #232b2f;
+
+        --bg: #0b1420;
+        --panel: rgba(18, 38, 43, 0.78);
+        --panel-2: rgba(18, 38, 43, 0.62);
+        --text: rgba(255, 255, 255, 0.94);
+        --muted: rgba(255, 255, 255, 0.78);
+        --border: rgba(255, 255, 255, 0.12);
+        --accent: var(--ls-blue);
+        --accent-2: #0c7c59; /* Spring Green (secondary) */
+        --danger: #943124; /* Live Red (secondary) */
+      }
+
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: var(--nimbus-50);
+          --panel: rgba(255, 255, 255, 0.92);
+          --panel-2: rgba(255, 255, 255, 0.82);
+          --text: rgba(18, 38, 43, 0.96); /* Winter Green */
+          --muted: rgba(18, 38, 43, 0.72);
+          --border: rgba(200, 211, 218, 0.9); /* Nimbus 200 */
+          --accent: var(--ls-blue);
+          --accent-2: #0c7c59;
+          --danger: #943124;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          "Object Sans",
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Helvetica,
+          Arial,
+          "Apple Color Emoji",
+          "Segoe UI Emoji";
+        background:
+          radial-gradient(1100px 520px at 15% 0%, rgba(11, 66, 195, 0.35), transparent 60%),
+          radial-gradient(900px 520px at 85% 15%, rgba(12, 124, 89, 0.22), transparent 62%),
+          radial-gradient(900px 600px at 50% 115%, rgba(18, 38, 43, 0.55), transparent 60%),
+          var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        padding: 36px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .container {
+        max-width: 920px;
+        width: 100%;
+      }
+
+      header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      h1 {
+        /* Brand type scale: H4=24px, H3=32px. Use 32px here. */
+        font-size: 32px;
+        letter-spacing: -0.02em;
+        margin: 0;
+        line-height: 40px;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+        font-size: 16px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      @media (min-width: 880px) {
+        .grid {
+          grid-template-columns: 1fr 1fr;
+          align-items: start;
+        }
+      }
+
+      .card {
+        background:
+          linear-gradient(180deg, color-mix(in srgb, var(--panel) 92%, transparent), var(--panel-2));
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 16px;
+        backdrop-filter: blur(10px);
+      }
+
+      .card h2 {
+        font-size: 14px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin: 0 0 12px 0;
+      }
+
+      label {
+        display: block;
+        font-size: 13px;
+        color: var(--muted);
+        margin: 0 0 6px 0;
+      }
+
+      input {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px 12px;
+        background: rgba(0, 0, 0, 0.16);
+        color: var(--text);
+        outline: none;
+      }
+
+      @media (prefers-color-scheme: light) {
+        input {
+          background: rgba(255, 255, 255, 0.75);
+        }
+      }
+
+      input:focus {
+        border-color: color-mix(in srgb, var(--accent) 75%, var(--border));
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent);
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .hint {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+
+      button {
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text);
+        padding: 10px 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      button.primary {
+        background: linear-gradient(
+          180deg,
+          color-mix(in srgb, var(--ls-blue) 92%, white),
+          color-mix(in srgb, var(--ls-blue) 85%, black)
+        );
+        border-color: color-mix(in srgb, var(--ls-blue) 60%, var(--border));
+      }
+
+      button.good {
+        background: linear-gradient(
+          180deg,
+          color-mix(in srgb, var(--accent-2) 92%, white),
+          color-mix(in srgb, var(--accent-2) 85%, black)
+        );
+        border-color: color-mix(in srgb, var(--accent-2) 55%, var(--border));
+      }
+
+      button.danger {
+        background: color-mix(in srgb, var(--danger) 14%, transparent);
+        border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+        color: color-mix(in srgb, var(--text) 88%, var(--danger));
+      }
+
+      button:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .output {
+        display: grid;
+        gap: 10px;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 120px;
+        resize: vertical;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 12px;
+        background: rgba(0, 0, 0, 0.14);
+        color: var(--text);
+        outline: none;
+        font-family:
+          ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Monaco,
+          Consolas,
+          "Liberation Mono",
+          "Courier New",
+          monospace;
+        font-size: 12.5px;
+        line-height: 1.5;
+      }
+
+      @media (prefers-color-scheme: light) {
+        textarea {
+          background: rgba(255, 255, 255, 0.75);
+        }
+      }
+
+      .status {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .status.error {
+        color: color-mix(in srgb, var(--danger) 80%, var(--text));
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Livestorm Access Link Generator</h1>
+        <p>Fill in the fields, and this page will generate the access link with safe URL-encoding.</p>
+      </header>
+
+      <div class="grid">
+        <section class="card" aria-label="Inputs">
+
+          <div class="row">
+            <div>
+              <label for="eventId">EVENT ID</label>
+              <input
+                id="eventId"
+                inputmode="text"
+                autocomplete="off"
+                placeholder="e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              />
+            </div>
+
+            <div>
+              <label for="sessionId">SESSION ID</label>
+              <input
+                id="sessionId"
+                inputmode="text"
+                autocomplete="off"
+                placeholder="e.g. xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              />
+            </div>
+
+            <div>
+              <label for="email">EMAIL</label>
+              <input id="email" inputmode="email" autocomplete="email" placeholder="name@company.com" />
+            </div>
+
+            <div>
+              <label for="passKey">PASS KEY</label>
+              <input id="passKey" inputmode="text" autocomplete="off" placeholder="e.g. 9f0a..." />
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="primary" id="generateBtn" type="button">Generate</button>
+            <button class="danger" id="clearBtn" type="button">Clear</button>
+          </div>
+        </section>
+
+        <section class="card" id="generatedCard" aria-label="Generated link" hidden>
+          <h2>Generated link</h2>
+
+          <div class="output">
+            <textarea id="output" readonly placeholder="Your generated link will appear here..."></textarea>
+            <div class="actions">
+              <button class="good" id="copyBtn" type="button" disabled>Copy link</button>
+              <button id="openBtn" type="button" disabled>Open link</button>
+            </div>
+            <div class="status" id="status" role="status" aria-live="polite"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      const TEMPLATE_BASE = "https://app.livestorm.co/p/{EVENT_ID}/live";
+
+      const els = {
+        eventId: document.getElementById("eventId"),
+        email: document.getElementById("email"),
+        passKey: document.getElementById("passKey"),
+        sessionId: document.getElementById("sessionId"),
+        generatedCard: document.getElementById("generatedCard"),
+        output: document.getElementById("output"),
+        status: document.getElementById("status"),
+        copyBtn: document.getElementById("copyBtn"),
+        openBtn: document.getElementById("openBtn"),
+        generateBtn: document.getElementById("generateBtn"),
+        clearBtn: document.getElementById("clearBtn"),
+      };
+
+      function setStatus(message, kind = "info") {
+        els.status.textContent = message || "";
+        els.status.classList.toggle("error", kind === "error");
+      }
+
+      function buildLink({ eventId, email, passKey, sessionId }) {
+        const trimmedEventId = eventId.trim();
+        if (!trimmedEventId) {
+          return { ok: false, error: "EVENT_ID is required." };
+        }
+
+        const url = new URL(TEMPLATE_BASE.replace("{EVENT_ID}", trimmedEventId));
+        if (email.trim()) url.searchParams.set("email", email.trim());
+        if (passKey.trim()) url.searchParams.set("key", passKey.trim());
+        if (sessionId.trim()) url.searchParams.set("s", sessionId.trim());
+
+        return { ok: true, url: url.toString() };
+      }
+
+      function syncButtons(hasUrl) {
+        els.copyBtn.disabled = !hasUrl;
+        els.openBtn.disabled = !hasUrl;
+      }
+
+      function setGeneratedVisible(visible) {
+        els.generatedCard.hidden = !visible;
+      }
+
+      function generate() {
+        const result = buildLink({
+          eventId: els.eventId.value,
+          email: els.email.value,
+          passKey: els.passKey.value,
+          sessionId: els.sessionId.value,
+        });
+
+        if (!result.ok) {
+          els.output.value = "";
+          syncButtons(false);
+          setGeneratedVisible(false);
+          setStatus(result.error, "error");
+          return;
+        }
+
+        els.output.value = result.url;
+        syncButtons(true);
+        setGeneratedVisible(true);
+        setStatus("Link generated.");
+      }
+
+      async function copy() {
+        const text = els.output.value.trim();
+        if (!text) return;
+
+        try {
+          await navigator.clipboard.writeText(text);
+          setStatus("Copied to clipboard.");
+        } catch {
+          els.output.focus();
+          els.output.select();
+          setStatus("Could not access clipboard. Selected the URL—press Cmd+C.", "error");
+        }
+      }
+
+      function openLink() {
+        const text = els.output.value.trim();
+        if (!text) return;
+        window.open(text, "_blank", "noopener,noreferrer");
+      }
+
+      function clearAll() {
+        els.eventId.value = "";
+        els.email.value = "";
+        els.passKey.value = "";
+        els.sessionId.value = "";
+        els.output.value = "";
+        syncButtons(false);
+        setGeneratedVisible(false);
+        setStatus("");
+        els.eventId.focus();
+      }
+
+      els.generateBtn.addEventListener("click", generate);
+      els.copyBtn.addEventListener("click", copy);
+      els.openBtn.addEventListener("click", openLink);
+      els.clearBtn.addEventListener("click", clearAll);
+
+      // Nice UX: Enter generates, and any change clears status.
+      [els.eventId, els.email, els.passKey, els.sessionId].forEach((el) => {
+        el.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") generate();
+        });
+        el.addEventListener("input", () => setStatus(""));
+      });
+
+      setGeneratedVisible(false);
+      els.eventId.focus();
+    </script>
+  </body>
+</html>
