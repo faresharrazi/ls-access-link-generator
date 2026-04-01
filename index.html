@@ -319,6 +319,7 @@
 
           <div class="actions">
             <button class="primary" id="generateBtn" type="button">Generate</button>
+            <button id="adminLookupBtn" type="button" hidden>Find Pass Key</button>
             <button class="danger" id="clearBtn" type="button">Clear</button>
           </div>
         </section>
@@ -340,6 +341,7 @@
 
     <script>
       const TEMPLATE_BASE = "https://app.livestorm.co/p/{EVENT_ID}/live";
+      const ADMIN_LOOKUP_BASE = "https://admin.livestorm.co/periods_identities";
 
       const els = {
         grid: document.getElementById("mainGrid"),
@@ -347,6 +349,7 @@
         email: document.getElementById("email"),
         passKey: document.getElementById("passKey"),
         sessionId: document.getElementById("sessionId"),
+        adminLookupBtn: document.getElementById("adminLookupBtn"),
         generatedCard: document.getElementById("generatedCard"),
         output: document.getElementById("output"),
         status: document.getElementById("status"),
@@ -383,6 +386,28 @@
       function setGeneratedVisible(visible) {
         els.generatedCard.hidden = !visible;
         els.grid.classList.toggle("two-col", visible);
+      }
+
+      function buildAdminLookupUrl({ sessionId, email }) {
+        const url = new URL(ADMIN_LOOKUP_BASE);
+        url.searchParams.set("q[id_or_identity_id_or_period_id_eq]", sessionId.trim());
+        url.searchParams.set("q[account_email_cont]", email.trim());
+        url.searchParams.set("commit", "Filter");
+        url.searchParams.set("subdomain", "admin");
+        url.searchParams.set("order", "created_at_desc");
+        return url.toString();
+      }
+
+      function syncAdminLookupVisibility() {
+        const hasEmail = !!els.email.value.trim();
+        const hasSessionId = !!els.sessionId.value.trim();
+        els.adminLookupBtn.hidden = !(hasEmail && hasSessionId);
+      }
+
+      function openAdminLookup() {
+        if (els.adminLookupBtn.hidden) return;
+        const url = buildAdminLookupUrl({ sessionId: els.sessionId.value, email: els.email.value });
+        window.open(url, "_blank", "noopener,noreferrer");
       }
 
       function generate() {
@@ -435,11 +460,13 @@
         els.output.value = "";
         syncButtons(false);
         setGeneratedVisible(false);
+        syncAdminLookupVisibility();
         setStatus("");
         els.eventId.focus();
       }
 
       els.generateBtn.addEventListener("click", generate);
+      els.adminLookupBtn.addEventListener("click", openAdminLookup);
       els.copyBtn.addEventListener("click", copy);
       els.openBtn.addEventListener("click", openLink);
       els.clearBtn.addEventListener("click", clearAll);
@@ -449,10 +476,14 @@
         el.addEventListener("keydown", (e) => {
           if (e.key === "Enter") generate();
         });
-        el.addEventListener("input", () => setStatus(""));
+        el.addEventListener("input", () => {
+          setStatus("");
+          syncAdminLookupVisibility();
+        });
       });
 
       setGeneratedVisible(false);
+      syncAdminLookupVisibility();
       els.eventId.focus();
     </script>
   </body>
